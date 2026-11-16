@@ -30,6 +30,18 @@ h2{font-size:19px;margin:17px 2px 5px}.hint{font-size:12px;color:var(--muted);ma
 .filter{display:flex;gap:8px}.filter>*{flex:1}
 @media(min-width:600px){main{padding:0 22px}.metrics{grid-template-columns:repeat(4,1fr)}.metric.primary{grid-column:span 2}.metric strong{font-size:21px}}
 </style>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+.import-box{border:1px dashed #f2a18d;background:#fff9f6;border-radius:14px;padding:14px;margin-top:12px}
+.import-box input[type=file]{font-size:12px;padding:9px}
+.import-note{font-size:12px;color:#666;margin:8px 0}
+.import-table-wrap{overflow:auto;max-width:100%}
+.import-table{width:100%;border-collapse:collapse;font-size:12px;min-width:620px}
+.import-table th,.import-table td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+.import-table input{min-width:70px;padding:7px}
+.status-ok{color:#168653;font-weight:700}.status-warn{color:#b56a00;font-weight:700}
+</style>
 </head>
 <body>
 <header>
@@ -119,8 +131,31 @@ h2{font-size:19px;margin:17px 2px 5px}.hint{font-size:12px;color:var(--muted);ma
    <div class="metric"><small>Jumlah transaksi</small><strong id="repCount">0</strong></div>
   </div>
  </div>
- <div class="card"><div class="section-title">Rincian per hari</div><div id="dailyList"></div></div>
- <div class="card"><div class="section-title">Ekspor data</div><p class="muted" style="font-size:12px">Unduh riwayat transaksi dalam format CSV untuk dibuka di Excel atau Google Sheets.</p><button class="btn primary full" onclick="exportCSV()">Unduh laporan CSV</button></div>
+ <div class="card"><div class="section-title">Biaya iklan terimpor</div><div id="importedAdsSummary" class="muted" style="font-size:12px"></div></div>
+  <div class="card"><div class="section-title">Rincian per hari</div><div id="dailyList"></div></div>
+ 
+  <div class="card">
+   <div class="section-title">Impor laporan Shopee</div>
+   <p class="muted" style="font-size:12px">Impor file Excel Penghasilan dari Seller Centre. Aplikasi membaca baris Order, tanggal pesanan, total penghasilan yang dilepas, dan rincian biaya.</p>
+   <div class="import-box">
+    <label>Modal produk per item (Rp) — karena modal produk toko sama</label>
+    <input id="importUnitCost" type="number" min="0" placeholder="Masukkan modal satu produk">
+    <label>File laporan Penghasilan (.xlsx)</label>
+    <input id="incomeFile" type="file" accept=".xlsx,.xls">
+    <button class="btn primary full" onclick="previewIncomeImport()">Baca & pratinjau laporan</button>
+    <p class="import-note">Jumlah item awal diperkirakan dari jumlah baris SKU per pesanan. Periksa dan sesuaikan jumlahnya sebelum impor.</p>
+   </div>
+   <div id="incomePreview"></div>
+  </div>
+  <div class="card">
+   <div class="section-title">Impor biaya iklan</div>
+   <p class="muted" style="font-size:12px">Impor CSV Semua Laporan Iklan CPC. Biaya iklan ditampilkan sebagai total periode terpisah agar tidak salah dibebankan ke tanggal pesanan.</p>
+   <label>File laporan iklan (.csv)</label><input id="adsFile" type="file" accept=".csv,text/csv">
+   <button class="btn secondary full" onclick="importAdsCSV()">Baca biaya iklan</button>
+   <div id="adsImportResult" class="import-note"></div>
+  </div>
+
+  <div class="card"><div class="section-title">Ekspor data</div><p class="muted" style="font-size:12px">Unduh riwayat transaksi dalam format CSV untuk dibuka di Excel atau Google Sheets.</p><button class="btn primary full" onclick="exportCSV()">Unduh laporan CSV</button></div>
 </section>
 
 <section id="settings" class="page">
@@ -158,12 +193,114 @@ function renderProducts(){$('productList').innerHTML=products.map(p=>`<div class
 function loadProduct(){let p=products.find(x=>x.id==$('productSelect').value);if(!p)return;$('saleName').value=p.name;$('salePrice').value=p.price;$('saleModal').value=p.cost;renderCalc()}
 function renderHistory(){let month=$('historyMonth').value;let list=sales.filter(s=>!month||s.date.slice(0,7)===month);$('historyList').innerHTML=list.map(s=>saleHTML(s)+`<div style="text-align:right;margin-top:-4px"><button class="btn danger" onclick="deleteSale(${s.id})">Hapus</button></div>`).join('')||'<div class="empty">Tidak ada transaksi pada periode ini.</div>'}
 function deleteSale(id){if(confirm('Hapus transaksi ini?')){sales=sales.filter(s=>s.id!==id);saveStore();renderHistory();renderDashboard();renderReports()}}
-function renderReports(){let month=$('reportMonth').value||nowMonth();$('reportMonth').value=month;let list=sales.filter(s=>s.date.slice(0,7)===month),r=list.reduce((a,s)=>a+s.r,0),c=list.reduce((a,s)=>a+s.total,0),p=list.reduce((a,s)=>a+s.profit,0);$('repProfit').textContent=money(p);$('repProfit').className=p>=0?'positive':'negative';$('repRevenue').textContent=money(r);$('repCost').textContent=money(c);$('repCount').textContent=list.length;let days={};list.forEach(s=>{let d=s.date.slice(0,10);days[d]??={r:0,p:0,n:0};days[d].r+=s.r;days[d].p+=s.profit;days[d].n++});$('dailyList').innerHTML=Object.keys(days).sort().reverse().map(d=>`<div class="item"><div><div class="item-title">${new Date(d+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div><div class="item-sub">${days[d].n} transaksi · Omzet ${money(days[d].r)}</div></div><div class="item-right ${days[d].p>=0?'positive':'negative'}">${money(days[d].p)}<div class="item-sub">laba</div></div></div>`).join('')||'<div class="empty">Belum ada data untuk bulan ini.</div>'}
+function renderReports(){let month=$('reportMonth').value||nowMonth();$('reportMonth').value=month;let list=sales.filter(s=>s.date.slice(0,7)===month),r=list.reduce((a,s)=>a+s.r,0),c=list.reduce((a,s)=>a+s.total,0),p=list.reduce((a,s)=>a+s.profit,0);$('repProfit').textContent=money(p);$('repProfit').className=p>=0?'positive':'negative';$('repRevenue').textContent=money(r);$('repCost').textContent=money(c);$('repCount').textContent=list.length;let days={};list.forEach(s=>{let d=s.date.slice(0,10);days[d]??={r:0,p:0,n:0};days[d].r+=s.r;days[d].p+=s.profit;days[d].n++});$('dailyList').innerHTML=Object.keys(days).sort().reverse().map(d=>`<div class="item"><div><div class="item-title">${new Date(d+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div><div class="item-sub">${days[d].n} transaksi · Omzet ${money(days[d].r)}</div></div><div class="item-right ${days[d].p>=0?'positive':'negative'}">${money(days[d].p)}<div class="item-sub">laba</div></div></div>`).join('')||'<div class="empty">Belum ada data untuk bulan ini.</div>';renderImportedAdsSummary()}
+function renderImportedAdsSummary(){
+ const el=$('importedAdsSummary');if(!el)return;
+ el.innerHTML=importedAds?`Total biaya iklan dari ${esc(importedAds.file)}: <b>${money(importedAds.total)}</b> (${importedAds.count} baris).<br><span class="status-warn">Biaya iklan belum dikurangkan otomatis dari laba harian karena file iklan yang diunggah merupakan rekap total periode, bukan rincian biaya per hari/pesanan.</span>`:'Belum ada laporan iklan yang diimpor.';
+}
 function exportCSV(){let rows=[['Tanggal','Nama','Jumlah','Harga/item','Modal/item','Omzet','Biaya layanan','Total biaya','Laba bersih','Margin']];sales.forEach(s=>rows.push([s.date,s.name,s.q,s.p,s.m,s.r,s.fee,s.total,s.profit,s.margin.toFixed(2)+'%']));let csv=rows.map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');download('\ufeff'+csv,'laporan-shopee.csv','text/csv;charset=utf-8')}
 function backupData(){download(JSON.stringify({version:1,products,sales},null,2),'backup-shopee-profit.json','application/json')}
 function download(data,name,type){let a=document.createElement('a'),url=URL.createObjectURL(new Blob([data],{type}));a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
 function importData(e){let f=e.target.files[0];if(!f)return;let rd=new FileReader();rd.onload=()=>{try{let d=JSON.parse(rd.result);if(!Array.isArray(d.products)||!Array.isArray(d.sales))throw 0;if(!confirm('Impor akan mengganti data saat ini. Lanjutkan?'))return;products=d.products;sales=d.sales;saveStore();renderDashboard();alert('Data berhasil diimpor.')}catch(err){alert('File backup tidak valid.')}};rd.readAsText(f);e.target.value=''}
 function clearAll(){if(confirm('Yakin menghapus seluruh produk dan transaksi? Data yang dihapus tidak dapat dikembalikan.')){products=[];sales=[];saveStore();renderDashboard();renderProducts();renderHistory();renderReports();alert('Semua data telah dihapus.')}}
+
+let pendingIncomeRows = [];
+let importedAds = JSON.parse(localStorage.getItem('spc_imported_ads')||'null');
+
+function parseShopeeNumber(v){
+ if(v===null||v===undefined||v==='-'||v==='') return 0;
+ if(typeof v==='number') return v;
+ let s=String(v).trim().replace(/[Rp\s]/g,'');
+ if(s.includes(',') && s.includes('.')) s=s.replace(/\./g,'').replace(',','.');
+ else if(s.includes(',')) s=s.replace(',','.');
+ else if((s.match(/\./g)||[]).length>1) s=s.replace(/\./g,'');
+ let n=Number(s); return Number.isFinite(n)?n:0;
+}
+function previewIncomeImport(){
+ const file=$('incomeFile').files[0], unitCost=Number($('importUnitCost').value);
+ if(!file){alert('Pilih file laporan Penghasilan terlebih dahulu.');return}
+ if(!Number.isFinite(unitCost)||unitCost<0){alert('Masukkan modal produk per item. Jika modal gratis, isi 0.');return}
+ if(typeof XLSX==='undefined'){alert('Pustaka pembaca Excel belum termuat. Pastikan internet aktif, lalu muat ulang aplikasi.');return}
+ const reader=new FileReader();
+ reader.onload=e=>{
+  try{
+   const wb=XLSX.read(e.target.result,{type:'array'});
+   const ws=wb.Sheets['Penghasilan'];
+   if(!ws) throw new Error('Sheet Penghasilan tidak ditemukan.');
+   const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+   const headers=rows[2]||[];
+   const idx=name=>headers.indexOf(name);
+   const orderIdx=idx('Lihat berdasarkan'), idIdx=idx('No. Pesanan'), dateIdx=idx('Waktu Pesanan Dibuat'),
+         releaseIdx=idx('Tanggal Dana Dilepaskan'), payoutIdx=idx('Total Penghasilan'), productPriceIdx=idx('Harga Produk'),
+         nameIdx=idx('Nama Produk');
+   if([orderIdx,idIdx,dateIdx,payoutIdx].some(i=>i<0)) throw new Error('Format kolom laporan tidak dikenali. Gunakan laporan Penghasilan Shopee asli.');
+   const skuCount={};
+   rows.slice(3).forEach(r=>{if(String(r[orderIdx]||'').trim().toLowerCase()==='sku'){const id=String(r[idIdx]||'');skuCount[id]=(skuCount[id]||0)+1;}});
+   const existing=new Set(sales.map(s=>s.orderId).filter(Boolean));
+   pendingIncomeRows=rows.slice(3).filter(r=>String(r[orderIdx]||'').trim().toLowerCase()==='order' && r[idIdx])
+    .map((r,i)=>({
+      orderId:String(r[idIdx]), date:String(r[dateIdx]||''), releaseDate:String(r[releaseIdx]||''),
+      payout:parseShopeeNumber(r[payoutIdx]), revenue:parseShopeeNumber(r[productPriceIdx]),
+      productName:String(r[nameIdx]||'Pesanan Shopee'), qty:Math.max(1,skuCount[String(r[idIdx])]||1),
+      unitCost, duplicate:existing.has(String(r[idIdx]))
+    })).filter(x=>!x.duplicate);
+   if(!pendingIncomeRows.length){$('incomePreview').innerHTML='<p class="import-note status-warn">Tidak ada pesanan baru untuk diimpor. Pesanan mungkin sudah pernah diimpor atau format file berbeda.</p>';return}
+   $('incomePreview').innerHTML=`
+    <p class="import-note status-ok">${pendingIncomeRows.length} pesanan baru ditemukan. Pesanan duplikat dilewati.</p>
+    <div class="import-table-wrap"><table class="import-table"><thead><tr><th>No. Pesanan</th><th>Tanggal pesanan</th><th>Produk</th><th>Jumlah item (periksa)</th><th>Penerimaan bersih</th></tr></thead><tbody>
+    ${pendingIncomeRows.map((o,i)=>`<tr><td>${esc(o.orderId)}</td><td>${esc(o.date)}</td><td>${esc(o.productName)}</td><td><input type="number" min="1" value="${o.qty}" onchange="pendingIncomeRows[${i}].qty=Math.max(1,Number(this.value)||1)"></td><td>${money(o.payout)}</td></tr>`).join('')}
+    </tbody></table></div>
+    <button class="btn primary full" onclick="commitIncomeImport()">Impor ${pendingIncomeRows.length} pesanan ke aplikasi</button>
+    <p class="import-note">Laba sebelum iklan dihitung: penerimaan bersih Shopee − (modal per item × jumlah item). Pastikan jumlah item sudah benar.</p>`;
+  }catch(err){$('incomePreview').innerHTML='<p class="import-note status-warn">'+esc(err.message||'Gagal membaca file.')+'</p>'}
+ };
+ reader.readAsArrayBuffer(file);
+}
+function commitIncomeImport(){
+ if(!pendingIncomeRows.length)return;
+ const now=new Date().toISOString();
+ const add=pendingIncomeRows.map(o=>{
+  const dateMatch=o.date.match(/^(\d{4}-\d{2}-\d{2})/);
+  const date=dateMatch?dateMatch[1]+'T12:00:00':now;
+  const cogs=o.unitCost*o.qty;
+  const profit=o.payout-cogs;
+  return {id:Date.now()+Math.floor(Math.random()*100000),orderId:o.orderId,date,name:o.productName||'Pesanan Shopee',
+    p:o.revenue||o.payout,m:o.unitCost,q:o.qty,v:0,r:o.revenue||o.payout,fee:Math.max(0,(o.revenue||o.payout)-o.payout),
+    other:0,total:cogs+Math.max(0,(o.revenue||o.payout)-o.payout),profit,unit:profit/o.qty,
+    margin:(o.revenue||o.payout)?profit/(o.revenue||o.payout)*100:0,netPayout:o.payout,
+    feeRate:0,fixed:0,pack:0,ads:0,ship:0,extra:0,source:'Shopee Income',releaseDate:o.releaseDate};
+ });
+ const ids=new Set(sales.map(s=>s.orderId).filter(Boolean));
+ const unique=add.filter(s=>!ids.has(s.orderId));
+ sales=[...unique,...sales];saveStore();pendingIncomeRows=[];
+ $('incomePreview').innerHTML=`<p class="status-ok">Berhasil mengimpor ${unique.length} pesanan. Laba dihitung sebelum biaya iklan.</p>`;
+ renderDashboard();renderReports();
+}
+function importAdsCSV(){
+ const file=$('adsFile').files[0];if(!file){alert('Pilih file CSV iklan.');return}
+ const rd=new FileReader();
+ rd.onload=e=>{
+  try{
+   const lines=String(e.target.result).replace(/^\uFEFF/,'').split(/\r?\n/);
+   const headerLine=lines.findIndex(x=>x.toLowerCase().includes('nama iklan')&&x.toLowerCase().includes('biaya'));
+   if(headerLine<0)throw new Error('Header kolom iklan tidak ditemukan.');
+   const headers=parseCSVLine(lines[headerLine]);const costIndex=headers.findIndex(h=>h.trim().toLowerCase()==='biaya');
+   if(costIndex<0)throw new Error('Kolom Biaya tidak ditemukan.');
+   let total=0,count=0;
+   for(const line of lines.slice(headerLine+1)){if(!line.trim())continue;const cols=parseCSVLine(line);if(cols.length>costIndex){total+=parseShopeeNumber(cols[costIndex]);count++}}
+   importedAds={total,count,file:file.name,importedAt:new Date().toISOString()};
+   localStorage.setItem('spc_imported_ads',JSON.stringify(importedAds));
+   $('adsImportResult').innerHTML=`<span class="status-ok">Biaya iklan terbaca: ${money(total)} dari ${count} baris iklan.</span><br>Dicatat terpisah sebagai biaya iklan periode laporan. Belum dikurangi otomatis dari laba harian.`;
+  }catch(err){$('adsImportResult').textContent=err.message||'Gagal membaca CSV.'}
+ };
+ rd.readAsText(file,'utf-8');
+}
+function parseCSVLine(line){
+ const out=[];let cur='',quoted=false;
+ for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'&&line[i+1]==='"'&&quoted){cur+='"';i++}else if(c==='"'){quoted=!quoted}else if(c===','&&!quoted){out.push(cur);cur=''}else{cur+=c}}
+ out.push(cur);return out;
+}
+
 if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 $('reportMonth').value=nowMonth();renderCalc();renderDashboard();
 </script>
