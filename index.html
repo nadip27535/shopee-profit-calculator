@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ee4d2d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Shopee Profit">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Shopee Profit Calculator</title>
+<style>
+:root{--orange:#ee4d2d;--orange2:#ff784e;--ink:#202124;--muted:#777d87;--bg:#f5f6f8;--card:#fff;--line:#eceef1;--green:#168653;--red:#d83b3b;--shadow:0 5px 22px #2021240c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;padding-bottom:88px}
+header{background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;padding:22px 18px 26px;border-radius:0 0 25px 25px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand{font-size:18px;font-weight:800;letter-spacing:-.3px}.sub{font-size:12px;opacity:.9;margin-top:3px}.pill{border:1px solid #ffffff70;background:#ffffff20;border-radius:20px;padding:7px 10px;font-size:11px}
+main{max-width:760px;margin:-12px auto 0;padding:0 14px}.page{display:none}.page.active{display:block}
+.card{background:var(--card);border-radius:18px;padding:16px;margin:13px 0;box-shadow:var(--shadow)}
+.section-title{font-size:16px;font-weight:800;margin:2px 0 12px;display:flex;justify-content:space-between;align-items:center}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{background:#fff;border-radius:16px;padding:14px;box-shadow:var(--shadow)}.metric small{color:var(--muted);display:block;font-size:11px}.metric strong{display:block;font-size:19px;margin-top:5px;letter-spacing:-.4px}.metric.primary{grid-column:span 2;background:linear-gradient(120deg,#fff2ed,#fff);border:1px solid #ffe0d5}.metric.primary strong{font-size:26px;color:var(--orange)}
+label{font-size:12px;font-weight:700;color:#4c515a;display:block;margin:11px 0 5px}input,select{width:100%;border:1px solid #e1e4e8;border-radius:11px;padding:12px;font:inherit;background:#fff;color:var(--ink);outline:none}input:focus,select:focus{border-color:var(--orange);box-shadow:0 0 0 3px #ee4d2d16}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{border:0;border-radius:12px;padding:12px 15px;font:700 14px inherit;cursor:pointer}.btn.primary{background:var(--orange);color:#fff}.btn.secondary{background:#fff0eb;color:var(--orange)}.btn.ghost{background:#f1f2f4;color:#444}.btn.danger{background:#fff0f0;color:var(--red)}.full{width:100%;margin-top:14px}
+.result{background:#fff6f2;border:1px solid #ffded2;border-radius:14px;padding:14px;margin-top:15px}.result .big{font-size:25px;font-weight:850;color:var(--orange);margin:4px 0}.rowline{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #f0e7e3;font-size:13px}.rowline:last-child{border:0}.muted{color:var(--muted)}.positive{color:var(--green)!important}.negative{color:var(--red)!important}
+.item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.item:last-child{border:0}.item-title{font-weight:750;font-size:14px}.item-sub{font-size:11px;color:var(--muted);margin-top:3px}.item-right{text-align:right;font-weight:800;font-size:13px}.empty{text-align:center;color:var(--muted);padding:25px 8px;font-size:13px}
+nav{position:fixed;bottom:0;left:0;right:0;background:#ffffffef;backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:9px 4px calc(9px + env(safe-area-inset-bottom));z-index:5}
+nav button{background:none;border:0;color:#8b9098;font-size:10px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 8px}nav button b{font-size:20px;font-weight:500}nav button.active{color:var(--orange)}
+h2{font-size:19px;margin:17px 2px 5px}.hint{font-size:12px;color:var(--muted);margin:0 2px 12px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.actions .btn{flex:1;min-width:100px}
+.filter{display:flex;gap:8px}.filter>*{flex:1}
+@media(min-width:600px){main{padding:0 22px}.metrics{grid-template-columns:repeat(4,1fr)}.metric.primary{grid-column:span 2}.metric strong{font-size:21px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="top"><div><div class="brand">🛍️ Shopee Profit Calculator</div><div class="sub">Pantau keuntungan tokomu dengan mudah</div></div><div class="pill">OFFLINE READY</div></div>
+</header>
+<main>
+<section id="dashboard" class="page active">
+ <h2>Dashboard</h2><p class="hint">Ringkasan performa penjualan yang tersimpan di perangkat ini.</p>
+ <div class="metrics">
+  <div class="metric primary"><small>Total laba bersih</small><strong id="dashProfit">Rp0</strong><small id="dashCount">0 transaksi tercatat</small></div>
+  <div class="metric"><small>Total omzet</small><strong id="dashRevenue">Rp0</strong></div>
+  <div class="metric"><small>Total biaya</small><strong id="dashCost">Rp0</strong></div>
+  <div class="metric"><small>Produk tersimpan</small><strong id="dashProducts">0</strong></div>
+  <div class="metric"><small>Rata-rata laba/transaksi</small><strong id="dashAverage">Rp0</strong></div>
+ </div>
+ <div class="card"><div class="section-title">Transaksi terbaru <button class="btn secondary" onclick="go('history')">Lihat semua</button></div><div id="recentList"></div></div>
+ <div class="card"><div class="section-title">Catatan penting</div><div class="muted" style="font-size:12px">Masukkan biaya sesuai rincian pada Seller Centre. Persentase biaya Shopee berbeda menurut kategori, program, dan status toko. Jangan masukkan biaya yang sama dua kali.</div></div>
+</section>
+
+<section id="calculator" class="page">
+ <h2>Kalkulator laba</h2><p class="hint">Isi data pesanan untuk menghitung estimasi laba bersih.</p>
+ <div class="card">
+  <div class="section-title">Informasi produk</div>
+  <label>Pilih produk tersimpan (opsional)</label><select id="productSelect" onchange="loadProduct()"><option value="">Input manual</option></select>
+  <label>Nama produk / pesanan</label><input id="saleName" placeholder="Contoh: Kaos Oversize">
+  <div class="grid2">
+   <div><label>Harga jual per item (Rp)</label><input id="salePrice" type="number" min="0" value="50000"></div>
+   <div><label>Modal per item (Rp)</label><input id="saleModal" type="number" min="0" value="25000"></div>
+   <div><label>Jumlah item</label><input id="saleQty" type="number" min="1" value="1"></div>
+   <div><label>Diskon/voucher penjual (Rp)</label><input id="saleVoucher" type="number" min="0" value="0"></div>
+  </div>
+ </div>
+ <div class="card">
+  <div class="section-title">Biaya dan potongan</div>
+  <div class="grid2">
+   <div><label>Biaya layanan (%)</label><input id="saleFee" type="number" min="0" step=".01" value="8"></div>
+   <div><label>Biaya tetap/pesanan (Rp)</label><input id="saleFixed" type="number" min="0" value="0"></div>
+   <div><label>Pengemasan/item (Rp)</label><input id="salePack" type="number" min="0" value="1000"></div>
+   <div><label>Iklan (Rp)</label><input id="saleAds" type="number" min="0" value="0"></div>
+   <div><label>Ongkir ditanggung penjual (Rp)</label><input id="saleShip" type="number" min="0" value="0"></div>
+   <div><label>Biaya lainnya (Rp)</label><input id="saleOther" type="number" min="0" value="0"></div>
+  </div>
+  <label>Dasar hitung biaya layanan</label><select id="saleFeeBase"><option value="gross">Harga jual sebelum voucher</option><option value="net">Harga jual setelah voucher</option></select>
+  <div class="result">
+   <small class="muted">Estimasi laba bersih</small><div class="big" id="calcProfit">Rp24.000</div>
+   <div class="rowline"><span>Omzet</span><b id="calcRevenue">Rp50.000</b></div>
+   <div class="rowline"><span>Modal produk</span><b id="calcModal">Rp25.000</b></div>
+   <div class="rowline"><span>Biaya layanan</span><b id="calcFee">Rp4.000</b></div>
+   <div class="rowline"><span>Biaya lainnya termasuk voucher</span><b id="calcOther">Rp1.000</b></div>
+   <div class="rowline"><span>Total biaya</span><b id="calcTotal">Rp30.000</b></div>
+   <div class="rowline"><span>Laba per item</span><b id="calcUnit">Rp24.000</b></div>
+   <div class="rowline"><span>Margin laba</span><b id="calcMargin">48%</b></div>
+  </div>
+  <button class="btn primary full" onclick="saveSale()">＋ Simpan transaksi</button>
+ </div>
+</section>
+
+<section id="products" class="page">
+ <h2>Data produk</h2><p class="hint">Simpan harga jual dan modal agar tidak perlu mengetik ulang.</p>
+ <div class="card">
+  <div class="section-title">Tambah / edit produk</div>
+  <input type="hidden" id="prodId">
+  <label>Nama produk</label><input id="prodName" placeholder="Nama produk">
+  <div class="grid2"><div><label>Harga jual (Rp)</label><input id="prodPrice" type="number" min="0" placeholder="50000"></div><div><label>Modal (Rp)</label><input id="prodCost" type="number" min="0" placeholder="25000"></div></div>
+  <button class="btn primary full" onclick="saveProduct()">Simpan produk</button>
+  <button class="btn ghost full" onclick="clearProductForm()">Kosongkan form</button>
+ </div>
+ <div class="card"><div class="section-title">Daftar produk</div><div id="productList"></div></div>
+</section>
+
+<section id="history" class="page">
+ <h2>Riwayat transaksi</h2><p class="hint">Semua catatan tersimpan lokal di perangkat ini.</p>
+ <div class="card">
+  <div class="filter"><input id="historyMonth" type="month" onchange="renderHistory()"><button class="btn ghost" onclick="document.getElementById('historyMonth').value='';renderHistory()">Semua</button></div>
+  <div id="historyList"></div>
+ </div>
+</section>
+
+<section id="reports" class="page">
+ <h2>Laporan keuntungan</h2><p class="hint">Rekap dihitung dari transaksi yang sudah disimpan.</p>
+ <div class="card">
+  <label>Pilih bulan laporan</label><input id="reportMonth" type="month" onchange="renderReports()">
+  <div class="metrics" style="margin-top:12px">
+   <div class="metric primary"><small>Laba bersih bulan ini</small><strong id="repProfit">Rp0</strong></div>
+   <div class="metric"><small>Omzet</small><strong id="repRevenue">Rp0</strong></div>
+   <div class="metric"><small>Total biaya</small><strong id="repCost">Rp0</strong></div>
+   <div class="metric"><small>Jumlah transaksi</small><strong id="repCount">0</strong></div>
+  </div>
+ </div>
+ <div class="card"><div class="section-title">Rincian per hari</div><div id="dailyList"></div></div>
+ <div class="card"><div class="section-title">Ekspor data</div><p class="muted" style="font-size:12px">Unduh riwayat transaksi dalam format CSV untuk dibuka di Excel atau Google Sheets.</p><button class="btn primary full" onclick="exportCSV()">Unduh laporan CSV</button></div>
+</section>
+
+<section id="settings" class="page">
+ <h2>Pengaturan & data</h2><p class="hint">Kelola cadangan data dan informasi aplikasi.</p>
+ <div class="card"><div class="section-title">Cadangkan data</div><p class="muted" style="font-size:12px">Simpan produk dan transaksi ke file JSON. Gunakan file ini untuk memindahkan data ke perangkat lain.</p><div class="actions"><button class="btn primary" onclick="backupData()">Backup JSON</button><button class="btn secondary" onclick="document.getElementById('importFile').click()">Impor JSON</button><input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(event)"></div></div>
+ <div class="card"><div class="section-title">Penyimpanan</div><p id="storageInfo" class="muted" style="font-size:12px"></p><button class="btn danger full" onclick="clearAll()">Hapus semua data</button></div>
+ <div class="card"><div class="section-title">Tentang aplikasi</div><p class="muted" style="font-size:12px">Shopee Profit Calculator adalah alat pencatatan dan estimasi laba. Aplikasi ini bukan aplikasi resmi Shopee dan tidak terhubung langsung ke akun Seller Centre.</p><p class="muted" style="font-size:12px">Data disimpan di browser/perangkat yang digunakan. Backup secara berkala agar data tidak hilang saat data browser dibersihkan.</p></div>
+</section>
+</main>
+<nav>
+ <button class="active" data-page="dashboard" onclick="go('dashboard')"><b>⌂</b>Beranda</button>
+ <button data-page="calculator" onclick="go('calculator')"><b>＋</b>Kalkulator</button>
+ <button data-page="products" onclick="go('products')"><b>▣</b>Produk</button>
+ <button data-page="history" onclick="go('history')"><b>◷</b>Riwayat</button>
+ <button data-page="reports" onclick="go('reports')"><b>▤</b>Laporan</button>
+</nav>
+<script>
+const $=id=>document.getElementById(id), money=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID'), num=id=>Math.max(0,Number($(id).value)||0);
+let products=JSON.parse(localStorage.getItem('spc_products')||'[]'), sales=JSON.parse(localStorage.getItem('spc_sales')||'[]');
+const saveStore=()=>{localStorage.setItem('spc_products',JSON.stringify(products));localStorage.setItem('spc_sales',JSON.stringify(sales));};
+const nowMonth=()=>new Date().toISOString().slice(0,7);
+function go(page){document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===page));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));if(page==='dashboard')renderDashboard();if(page==='products')renderProducts();if(page==='history')renderHistory();if(page==='reports')renderReports();window.scrollTo(0,0)}
+function calc(){let p=num('salePrice'),m=num('saleModal'),q=Math.max(1,Number($('saleQty').value)||1),v=num('saleVoucher'),r=p*q,feeBase=$('saleFeeBase').value==='net'?Math.max(0,r-v):r,fee=feeBase*num('saleFee')/100,other=v+num('saleFixed')+num('salePack')*q+num('saleAds')+num('saleShip')+num('saleOther'),total=m*q+fee+other,profit=r-total;return {p,m,q,v,r,fee,other,total,profit,unit:profit/q,margin:r?profit/r*100:0}}
+function renderCalc(){let c=calc();$('calcProfit').textContent=money(c.profit);$('calcProfit').className='big '+(c.profit>=0?'positive':'negative');$('calcRevenue').textContent=money(c.r);$('calcModal').textContent=money(c.m*c.q);$('calcFee').textContent=money(c.fee);$('calcOther').textContent=money(c.other);$('calcTotal').textContent=money(c.total);$('calcUnit').textContent=money(c.unit);$('calcMargin').textContent=c.margin.toFixed(2)+'%'}
+['salePrice','saleModal','saleQty','saleVoucher','saleFee','saleFixed','salePack','saleAds','saleShip','saleOther','saleFeeBase'].forEach(id=>$(id).addEventListener('input',renderCalc));
+function saveSale(){let c=calc();if(!c.p||!c.q){alert('Masukkan harga jual dan jumlah item terlebih dahulu.');return}let s={id:Date.now(),date:new Date().toISOString(),name:$('saleName').value.trim()||'Penjualan',...c,feeRate:num('saleFee'),fixed:num('saleFixed'),pack:num('salePack'),ads:num('saleAds'),ship:num('saleShip'),extra:num('saleOther'),feeBase:$('saleFeeBase').value};sales.unshift(s);saveStore();alert('Transaksi berhasil disimpan.');$('saleName').value='';renderDashboard()}
+function renderDashboard(){let r=sales.reduce((a,s)=>a+s.r,0),cost=sales.reduce((a,s)=>a+s.total,0),profit=sales.reduce((a,s)=>a+s.profit,0);$('dashProfit').textContent=money(profit);$('dashProfit').className=profit>=0?'positive':'';$('dashRevenue').textContent=money(r);$('dashCost').textContent=money(cost);$('dashProducts').textContent=products.length;$('dashCount').textContent=sales.length+' transaksi tercatat';$('dashAverage').textContent=money(sales.length?profit/sales.length:0);$('recentList').innerHTML=sales.slice(0,5).map(s=>saleHTML(s)).join('')||'<div class="empty">Belum ada transaksi. Mulai dari menu Kalkulator.</div>';$('storageInfo').textContent=products.length+' produk dan '+sales.length+' transaksi tersimpan pada browser ini.'}
+function saleHTML(s){return `<div class="item"><div><div class="item-title">${esc(s.name)}</div><div class="item-sub">${new Date(s.date).toLocaleString('id-ID')} · ${s.q} item · Omzet ${money(s.r)}</div></div><div class="item-right ${s.profit>=0?'positive':'negative'}">${money(s.profit)}<div class="item-sub">laba bersih</div></div></div>`}
+function esc(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function saveProduct(){let name=$('prodName').value.trim(),price=Number($('prodPrice').value)||0,cost=Number($('prodCost').value)||0;if(!name||price<=0){alert('Isi nama dan harga jual produk.');return}let id=$('prodId').value||Date.now();let old=products.findIndex(p=>p.id==id),obj={id,name,price,cost};if(old>=0)products[old]=obj;else products.push(obj);saveStore();clearProductForm();renderProducts();alert('Produk tersimpan.')}
+function clearProductForm(){$('prodId').value='';$('prodName').value='';$('prodPrice').value='';$('prodCost').value=''}
+function editProduct(id){let p=products.find(x=>x.id==id);if(!p)return;$('prodId').value=p.id;$('prodName').value=p.name;$('prodPrice').value=p.price;$('prodCost').value=p.cost;window.scrollTo(0,0)}
+function deleteProduct(id){if(confirm('Hapus produk ini?')){products=products.filter(p=>p.id!=id);saveStore();renderProducts()}}
+function renderProducts(){$('productList').innerHTML=products.map(p=>`<div class="item"><div><div class="item-title">${esc(p.name)}</div><div class="item-sub">Jual ${money(p.price)} · Modal ${money(p.cost)}</div></div><div class="actions"><button class="btn secondary" onclick="editProduct(${JSON.stringify(p.id)})">Edit</button><button class="btn danger" onclick="deleteProduct(${JSON.stringify(p.id)})">Hapus</button></div></div>`).join('')||'<div class="empty">Belum ada produk tersimpan.</div>';$('productSelect').innerHTML='<option value="">Input manual</option>'+products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}
+function loadProduct(){let p=products.find(x=>x.id==$('productSelect').value);if(!p)return;$('saleName').value=p.name;$('salePrice').value=p.price;$('saleModal').value=p.cost;renderCalc()}
+function renderHistory(){let month=$('historyMonth').value;let list=sales.filter(s=>!month||s.date.slice(0,7)===month);$('historyList').innerHTML=list.map(s=>saleHTML(s)+`<div style="text-align:right;margin-top:-4px"><button class="btn danger" onclick="deleteSale(${s.id})">Hapus</button></div>`).join('')||'<div class="empty">Tidak ada transaksi pada periode ini.</div>'}
+function deleteSale(id){if(confirm('Hapus transaksi ini?')){sales=sales.filter(s=>s.id!==id);saveStore();renderHistory();renderDashboard();renderReports()}}
+function renderReports(){let month=$('reportMonth').value||nowMonth();$('reportMonth').value=month;let list=sales.filter(s=>s.date.slice(0,7)===month),r=list.reduce((a,s)=>a+s.r,0),c=list.reduce((a,s)=>a+s.total,0),p=list.reduce((a,s)=>a+s.profit,0);$('repProfit').textContent=money(p);$('repProfit').className=p>=0?'positive':'negative';$('repRevenue').textContent=money(r);$('repCost').textContent=money(c);$('repCount').textContent=list.length;let days={};list.forEach(s=>{let d=s.date.slice(0,10);days[d]??={r:0,p:0,n:0};days[d].r+=s.r;days[d].p+=s.profit;days[d].n++});$('dailyList').innerHTML=Object.keys(days).sort().reverse().map(d=>`<div class="item"><div><div class="item-title">${new Date(d+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div><div class="item-sub">${days[d].n} transaksi · Omzet ${money(days[d].r)}</div></div><div class="item-right ${days[d].p>=0?'positive':'negative'}">${money(days[d].p)}<div class="item-sub">laba</div></div></div>`).join('')||'<div class="empty">Belum ada data untuk bulan ini.</div>'}
+function exportCSV(){let rows=[['Tanggal','Nama','Jumlah','Harga/item','Modal/item','Omzet','Biaya layanan','Total biaya','Laba bersih','Margin']];sales.forEach(s=>rows.push([s.date,s.name,s.q,s.p,s.m,s.r,s.fee,s.total,s.profit,s.margin.toFixed(2)+'%']));let csv=rows.map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');download('\ufeff'+csv,'laporan-shopee.csv','text/csv;charset=utf-8')}
+function backupData(){download(JSON.stringify({version:1,products,sales},null,2),'backup-shopee-profit.json','application/json')}
+function download(data,name,type){let a=document.createElement('a'),url=URL.createObjectURL(new Blob([data],{type}));a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
+function importData(e){let f=e.target.files[0];if(!f)return;let rd=new FileReader();rd.onload=()=>{try{let d=JSON.parse(rd.result);if(!Array.isArray(d.products)||!Array.isArray(d.sales))throw 0;if(!confirm('Impor akan mengganti data saat ini. Lanjutkan?'))return;products=d.products;sales=d.sales;saveStore();renderDashboard();alert('Data berhasil diimpor.')}catch(err){alert('File backup tidak valid.')}};rd.readAsText(f);e.target.value=''}
+function clearAll(){if(confirm('Yakin menghapus seluruh produk dan transaksi? Data yang dihapus tidak dapat dikembalikan.')){products=[];sales=[];saveStore();renderDashboard();renderProducts();renderHistory();renderReports();alert('Semua data telah dihapus.')}}
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+$('reportMonth').value=nowMonth();renderCalc();renderDashboard();
+</script>
+</body></html>
